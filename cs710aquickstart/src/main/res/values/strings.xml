@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CS710S QuickStart</string>
+    <string name="app_name">CS710S QuickStart (Miles)</string>
 
     <!-- Main Activity -->
     <string name="main_title">CS710S QuickStart</string>
-    <string name="main_subtitle">Simple RFID Reader Demo</string>
+    <string name="main_subtitle">OTA Development Build</string>
     <string name="btn_scan_readers">Scan for Readers</string>
     <string name="btn_inventory">RFID Inventory</string>
     <string name="btn_geiger_search">Geiger Search</string>
