@@ -85,48 +85,7 @@ jobs:
           profile: pixel_5
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            mkdir -p screenshots
-
-            echo "Contents of apk/ directory:"
-            ls -la apk/ || echo "(apk/ does not exist)"
-            find apk/ -type f || true
-
-            APK=$(find apk/ -type f -name "*.apk" | head -1)
-            if [ -z "$APK" ]; then
-              echo "ERROR: No .apk file found under apk/. Aborting screenshots."
-              exit 1
-            fi
-            echo "Installing $APK"
-            adb install -r -t "$APK"
-
-            # Pre-grant runtime permissions to skip prompts
-            adb shell pm grant com.csl.cs710aquickstart android.permission.BLUETOOTH_SCAN || true
-            adb shell pm grant com.csl.cs710aquickstart android.permission.BLUETOOTH_CONNECT || true
-            adb shell pm grant com.csl.cs710aquickstart android.permission.ACCESS_FINE_LOCATION || true
-            adb shell pm grant com.csl.cs710aquickstart android.permission.ACCESS_COARSE_LOCATION || true
-
-            # MainActivity
-            adb shell am start -n com.csl.cs710aquickstart/.MainActivity
-            sleep 6
-            adb exec-out screencap -p > screenshots/01_main.png
-
-            # ScanActivity
-            adb shell am start -n com.csl.cs710aquickstart/.ScanActivity
-            sleep 5
-            adb exec-out screencap -p > screenshots/02_scan.png
-
-            # InventoryActivity
-            adb shell am start -n com.csl.cs710aquickstart/.InventoryActivity
-            sleep 5
-            adb exec-out screencap -p > screenshots/03_inventory.png
-
-            # GeigerSearchActivity
-            adb shell am start -n com.csl.cs710aquickstart/.GeigerSearchActivity
-            sleep 5
-            adb exec-out screencap -p > screenshots/04_geiger.png
-
-            ls -lh screenshots/
+          script: bash .github/scripts/screenshot.sh
 
       - name: Upload screenshots artifact
         if: always()
