@@ -56,3 +56,75 @@ jobs:
           name: cs710aquickstart-debug-${{ github.sha }}
           path: ${{ steps.find_apk.outputs.apk_path }}
           retention-days: 30
+
+  screenshots:
+    runs-on: ubuntu-latest
+    needs: build
+    continue-on-error: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cs710aquickstart-debug-${{ github.sha }}
+          path: apk/
+
+      - name: Enable KVM for emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Boot emulator, install APK, capture screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            mkdir -p screenshots
+            APK=$(find apk/ -name "*.apk" | head -1)
+            echo "Installing $APK"
+            adb install -r -t "$APK"
+
+            # Pre-grant runtime permissions to skip prompts
+            adb shell pm grant com.csl.cs710aquickstart android.permission.BLUETOOTH_SCAN || true
+            adb shell pm grant com.csl.cs710aquickstart android.permission.BLUETOOTH_CONNECT || true
+            adb shell pm grant com.csl.cs710aquickstart android.permission.ACCESS_FINE_LOCATION || true
+            adb shell pm grant com.csl.cs710aquickstart android.permission.ACCESS_COARSE_LOCATION || true
+
+            # MainActivity
+            adb shell am start -n com.csl.cs710aquickstart/.MainActivity
+            sleep 6
+            adb exec-out screencap -p > screenshots/01_main.png
+
+            # ScanActivity
+            adb shell am start -n com.csl.cs710aquickstart/.ScanActivity
+            sleep 5
+            adb exec-out screencap -p > screenshots/02_scan.png
+
+            # InventoryActivity
+            adb shell am start -n com.csl.cs710aquickstart/.InventoryActivity
+            sleep 5
+            adb exec-out screencap -p > screenshots/03_inventory.png
+
+            # GeigerSearchActivity
+            adb shell am start -n com.csl.cs710aquickstart/.GeigerSearchActivity
+            sleep 5
+            adb exec-out screencap -p > screenshots/04_geiger.png
+
+            ls -lh screenshots/
+
+      - name: Upload screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs710aquickstart-screenshots-${{ github.sha }}
+          path: screenshots/
+          retention-days: 30
