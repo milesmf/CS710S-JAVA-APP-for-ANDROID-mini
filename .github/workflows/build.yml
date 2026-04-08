@@ -42,20 +42,18 @@ jobs:
       - name: Build cs710aquickstart debug APK
         run: ./gradlew :cs710aquickstart:assembleDebug --no-daemon --stacktrace
 
-      - name: Locate built APK
-        id: find_apk
+      - name: List built APK(s)
         run: |
-          APK_PATH=$(find cs710aquickstart/build/outputs/apk/debug -name "*.apk" | head -1)
-          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
-          echo "Built APK: $APK_PATH"
-          ls -lh "$APK_PATH"
+          echo "APK build output:"
+          ls -lh cs710aquickstart/build/outputs/apk/debug/
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: cs710aquickstart-debug-${{ github.sha }}
-          path: ${{ steps.find_apk.outputs.apk_path }}
-          retention-days: 30
+          path: cs710aquickstart/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
 
   screenshots:
     runs-on: ubuntu-latest
@@ -89,7 +87,16 @@ jobs:
           disable-animations: true
           script: |
             mkdir -p screenshots
-            APK=$(find apk/ -name "*.apk" | head -1)
+
+            echo "Contents of apk/ directory:"
+            ls -la apk/ || echo "(apk/ does not exist)"
+            find apk/ -type f || true
+
+            APK=$(find apk/ -type f -name "*.apk" | head -1)
+            if [ -z "$APK" ]; then
+              echo "ERROR: No .apk file found under apk/. Aborting screenshots."
+              exit 1
+            fi
             echo "Installing $APK"
             adb install -r -t "$APK"
 
@@ -127,4 +134,4 @@ jobs:
         with:
           name: cs710aquickstart-screenshots-${{ github.sha }}
           path: screenshots/
-          retention-days: 30
+          retention-days: 7
